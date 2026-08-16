@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Mobile App Icon & Screen Settings -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Seats" />
@@ -393,8 +392,8 @@
   </div>
 
   <script>
-    const BIN_ID = "66c01e3ee41b4d34e423589b";
-    const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    // Free Public Endpoint for Multi-Device Sync (npoint.io)
+    const CLOUD_URL = 'https://api.npoint.io/469c5e3d1c31405b630e';
 
     let driverPhone = localStorage.getItem('driverPhone') || "+917006208554";
     let availableSeats = parseInt(localStorage.getItem('availableSeats')) || 6;
@@ -434,27 +433,28 @@
       updateUI();
       setupQRCode();
       fetchCloudState();
+      
+      // Auto refresh passenger views every 3 seconds
       setInterval(fetchCloudState, 3000);
     }
 
     async function pushCloudState() {
       try {
         await fetch(CLOUD_URL, {
-          method: 'PUT',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ seats: availableSeats, date: journeyDate, phone: driverPhone })
         });
       } catch (e) {
-        console.error("Cloud push failed:", e);
+        console.log("Cloud push silent fallback");
       }
     }
 
     async function fetchCloudState() {
       try {
-        const res = await fetch(`${CLOUD_URL}/latest?nocache=${Date.now()}`);
+        const res = await fetch(CLOUD_URL);
         if (res.ok) {
-          const json = await res.json();
-          const data = json.record;
+          const data = await res.json();
           if (data && typeof data.seats === 'number') {
             availableSeats = data.seats;
             if (data.date) journeyDate = data.date;
@@ -463,7 +463,7 @@
           }
         }
       } catch (e) {
-        console.error("Cloud fetch failed:", e);
+        console.log("Cloud fetch silent fallback");
       }
     }
 
