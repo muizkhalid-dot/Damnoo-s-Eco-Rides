@@ -9,6 +9,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seat Request App</title>
+
+  <!-- Firebase Realtime Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <style>
     :root {
       --bg-yellow: #FFCC00;
@@ -172,12 +177,16 @@
       font-weight: 800;
       cursor: pointer;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-decoration: none;
-      transition: transform 0.1s ease;
-    }
+      const firebaseConfig = {
+      apiKey: "AIzaSyBnFkW8eqSUuzxr9nD_R53oXvk2A4QaHSk",
+      authDomain: "car-pooling-59699.firebaseapp.com",
+      databaseURL: "https://car-pooling-59699-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "car-pooling-59699",
+      storageBucket: "car-pooling-59699.firebasestorage.app",
+      messagingSenderId: "542955477260",
+      appId: "1:542955477260:web:e47c0d714ae6f418d5d129",
+      measurementId: "G-NDN93Y1P8E"
+    };
 
     .btn:active { transform: scale(0.98); }
 
@@ -392,12 +401,27 @@
   </div>
 
   <script>
-    // Free Public Endpoint for Multi-Device Sync (npoint.io)
-    const CLOUD_URL = 'https://api.npoint.io/469c5e3d1c31405b630e';
+    // -----------------------------------------------------------------
+    // REPLACE THE OBJECT BELOW WITH YOUR FIREBASE CONFIG FROM STEP 1
+    // -----------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-    let driverPhone = localStorage.getItem('driverPhone') || "+917006208554";
-    let availableSeats = parseInt(localStorage.getItem('availableSeats')) || 6;
-    let journeyDate = localStorage.getItem('journeyDate') || new Date().toISOString().split('T')[0];
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const stateRef = db.ref("seat_app_state");
+
+    let driverPhone = "+917006208554";
+    let availableSeats = 6;
+    let journeyDate = new Date().toISOString().split('T')[0];
     let requestedSeats = 1;
 
     const headerTrigger = document.getElementById('header-trigger');
@@ -428,50 +452,35 @@
     const driverDoneBtn = document.getElementById('btn-driver-done');
 
     function init() {
-      manualPhoneInput.value = driverPhone;
-      manualDateInput.value = journeyDate;
-      updateUI();
       setupQRCode();
-      fetchCloudState();
-      
-      // Auto refresh passenger views every 3 seconds
-      setInterval(fetchCloudState, 3000);
-    }
 
-    async function pushCloudState() {
-      try {
-        await fetch(CLOUD_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seats: availableSeats, date: journeyDate, phone: driverPhone })
-        });
-      } catch (e) {
-        console.log("Cloud push silent fallback");
-      }
-    }
-
-    async function fetchCloudState() {
-      try {
-        const res = await fetch(CLOUD_URL);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && typeof data.seats === 'number') {
-            availableSeats = data.seats;
-            if (data.date) journeyDate = data.date;
-            if (data.phone) driverPhone = data.phone;
-            updateUI();
-          }
+      // INSTANT LIVE WEBSOCKET LISTENER
+      // Automatically triggers UI updates on ALL connected phones the millisecond the driver updates
+      stateRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          if (typeof data.seats === 'number') availableSeats = data.seats;
+          if (data.date) journeyDate = data.date;
+          if (data.phone) driverPhone = data.phone;
+        } else {
+          // Initialize DB default state if empty
+          pushStateToCloud();
         }
-      } catch (e) {
-        console.log("Cloud fetch silent fallback");
-      }
+        manualPhoneInput.value = driverPhone;
+        manualDateInput.value = journeyDate;
+        updateUI();
+      });
+    }
+
+    function pushStateToCloud() {
+      stateRef.set({
+        seats: availableSeats,
+        date: journeyDate,
+        phone: driverPhone
+      });
     }
 
     function updateUI() {
-      localStorage.setItem('availableSeats', availableSeats);
-      localStorage.setItem('journeyDate', journeyDate);
-      localStorage.setItem('driverPhone', driverPhone);
-
       const cleanPhone = driverPhone.replace(/[^0-9+]/g, '');
       callBtn.href = `tel:${cleanPhone}`;
 
@@ -485,6 +494,7 @@
 
       seatsCountDisplay.textContent = availableSeats;
       driverSeatsCount.textContent = availableSeats;
+      manualSeatInput.value = availableSeats;
 
       if (requestedSeats > availableSeats) {
         requestedSeats = Math.max(1, availableSeats);
@@ -593,39 +603,34 @@
     manualPhoneInput.addEventListener('change', (e) => {
       if (e.target.value) {
         driverPhone = e.target.value;
-        updateUI();
-        pushCloudState();
+        pushStateToCloud();
       }
     });
 
     manualDateInput.addEventListener('change', (e) => {
       if (e.target.value) {
         journeyDate = e.target.value;
-        updateUI();
-        pushCloudState();
+        pushStateToCloud();
       }
     });
 
     driverMinusBtn.addEventListener('click', () => {
       if (availableSeats > 0) {
         availableSeats--;
-        updateUI();
-        pushCloudState();
+        pushStateToCloud();
       }
     });
 
     driverPlusBtn.addEventListener('click', () => {
       availableSeats++;
-      updateUI();
-      pushCloudState();
+      pushStateToCloud();
     });
 
     manualUpdateBtn.addEventListener('click', () => {
       const val = parseInt(manualSeatInput.value);
       if (!isNaN(val) && val >= 0) {
         availableSeats = val;
-        updateUI();
-        pushCloudState();
+        pushStateToCloud();
       }
     });
 
