@@ -10,7 +10,6 @@
       --text-black: #000000;
       --btn-bg: #000000;
       --btn-text: #FFFFFF;
-      --danger: #d97706;
     }
 
     * {
@@ -45,7 +44,6 @@
       height: fit-content;
     }
 
-    /* Header Trigger */
     .header {
       text-align: center;
       padding: 12px;
@@ -75,7 +73,6 @@
       transition: width 0.1s linear;
     }
 
-    /* Date Badge */
     .date-badge {
       text-align: center;
       background: var(--bg-yellow);
@@ -91,7 +88,6 @@
       gap: 6px;
     }
 
-    /* Availability Display Card */
     .seats-card {
       text-align: center;
       padding: 24px 16px;
@@ -125,7 +121,6 @@
       font-size: 1.1rem;
     }
 
-    /* Passenger Controls */
     .passenger-controls {
       display: flex;
       flex-direction: column;
@@ -186,7 +181,6 @@
       cursor: not-allowed;
     }
 
-    /* QR Code Card */
     .qr-section {
       text-align: center;
       border-top: 2px solid var(--text-black);
@@ -211,7 +205,6 @@
       height: 140px;
     }
 
-    /* Driver Overlay Modal */
     .modal-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -314,25 +307,21 @@
 
   <div class="app-container">
     
-    <!-- Secret Trigger Title (Press & Hold for 3 Seconds) -->
     <div class="header" id="header-trigger">
       <h1>Seat Requests</h1>
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <!-- Date of Journey Banner -->
     <div class="date-badge">
       <span>📅 Journey Date:</span>
       <span id="journey-date-display">Today</span>
     </div>
 
-    <!-- Main Passenger Availability Card -->
     <div class="seats-card" id="seats-card">
       <div class="seats-count" id="seats-count">6</div>
       <div class="seats-label" id="seats-label">SEATS AVAILABLE</div>
     </div>
 
-    <!-- Passenger Controls -->
     <div class="passenger-controls">
       <div class="counter-row" id="counter-row">
         <span>I want</span>
@@ -351,7 +340,6 @@
       </a>
     </div>
 
-    <!-- Application QR Code & Direct WhatsApp Share -->
     <div class="qr-section">
       <div class="qr-card">
         <img id="qr-image" src="" alt="App QR Code" />
@@ -361,11 +349,9 @@
       </button>
     </div>
 
-    <!-- Hidden Driver Control Panel Overlay -->
     <div class="modal-overlay" id="driver-modal">
       <div class="driver-title">Driver Control Panel</div>
 
-      <!-- Driver Phone Input -->
       <div class="manual-entry-group">
         <label for="manual-phone-input">Driver Mobile Number</label>
         <div class="manual-input-row">
@@ -373,7 +359,6 @@
         </div>
       </div>
 
-      <!-- Set Journey Date -->
       <div class="manual-entry-group">
         <label for="manual-date-input">Journey Date</label>
         <div class="manual-input-row">
@@ -381,7 +366,6 @@
         </div>
       </div>
 
-      <!-- Seat Count Modifier -->
       <div class="driver-seats-display" id="driver-seats-count">6</div>
 
       <div class="driver-adjust-row">
@@ -389,7 +373,6 @@
         <button class="btn-driver-circle" id="btn-driver-plus">+</button>
       </div>
 
-      <!-- Manual Seat Modifier -->
       <div class="manual-entry-group">
         <label for="manual-seat-input">Set Available Seats</label>
         <div class="manual-input-row">
@@ -404,6 +387,9 @@
   </div>
 
   <script>
+    // Live Cloud Sync Configuration (Free Public KV Store)
+    const SYNC_URL = 'https://kvdb.io/8xQ9jKz7S9pL2N4mQ6vA1x/driver_seats_7006208554';
+
     let driverPhone = localStorage.getItem('driverPhone') || "+917006208554";
     let availableSeats = parseInt(localStorage.getItem('availableSeats')) || 6;
     let journeyDate = localStorage.getItem('journeyDate') || new Date().toISOString().split('T')[0];
@@ -441,6 +427,38 @@
       manualDateInput.value = journeyDate;
       updateUI();
       setupQRCode();
+      fetchCloudState();
+      setInterval(fetchCloudState, 4000); // Check live updates every 4 seconds
+    }
+
+    // Push Driver changes to cloud so passengers see it
+    async function pushCloudState() {
+      try {
+        await fetch(SYNC_URL, {
+          method: 'POST',
+          body: JSON.stringify({ seats: availableSeats, date: journeyDate, phone: driverPhone })
+        });
+      } catch (e) {
+        console.log("Cloud sync save error:", e);
+      }
+    }
+
+    // Pull Driver updates to passenger devices
+    async function fetchCloudState() {
+      try {
+        const res = await fetch(SYNC_URL);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data.seats === 'number') {
+            availableSeats = data.seats;
+            if (data.date) journeyDate = data.date;
+            if (data.phone) driverPhone = data.phone;
+            updateUI();
+          }
+        }
+      } catch (e) {
+        console.log("Cloud sync fetch error:", e);
+      }
     }
 
     function updateUI() {
@@ -461,7 +479,6 @@
 
       seatsCountDisplay.textContent = availableSeats;
       driverSeatsCount.textContent = availableSeats;
-      manualSeatInput.value = availableSeats;
 
       if (requestedSeats > availableSeats) {
         requestedSeats = Math.max(1, availableSeats);
@@ -571,6 +588,7 @@
       if (e.target.value) {
         driverPhone = e.target.value;
         updateUI();
+        pushCloudState();
       }
     });
 
@@ -578,6 +596,7 @@
       if (e.target.value) {
         journeyDate = e.target.value;
         updateUI();
+        pushCloudState();
       }
     });
 
@@ -585,12 +604,14 @@
       if (availableSeats > 0) {
         availableSeats--;
         updateUI();
+        pushCloudState();
       }
     });
 
     driverPlusBtn.addEventListener('click', () => {
       availableSeats++;
       updateUI();
+      pushCloudState();
     });
 
     manualUpdateBtn.addEventListener('click', () => {
@@ -598,6 +619,7 @@
       if (!isNaN(val) && val >= 0) {
         availableSeats = val;
         updateUI();
+        pushCloudState();
       }
     });
 
