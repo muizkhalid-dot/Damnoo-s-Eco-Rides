@@ -89,19 +89,29 @@
       gap: 8px;
     }
 
+    .badge-pair {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
     .date-badge {
+      flex: 1;
       text-align: center;
       background: var(--bg-yellow);
       color: var(--text-black);
-      padding: 8px 12px;
+      padding: 8px 6px;
       border-radius: 20px;
-      font-size: 0.95rem;
+      font-size: 0.82rem;
       font-weight: 800;
       border: 2px solid var(--text-black);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .seats-card {
@@ -358,21 +368,28 @@
 
     <!-- Date, Departure Time, Destination & Pick Up Point Badges -->
     <div class="info-badges-row">
-      <div class="date-badge">
-        <span>📅 Journey Date:</span>
-        <span id="journey-date-display">Today</span>
+      <!-- Row 1: Journey Date & Departure Time -->
+      <div class="badge-pair">
+        <div class="date-badge">
+          <span>📅 Date:</span>
+          <span id="journey-date-display">Today</span>
+        </div>
+        <div class="date-badge">
+          <span>⏰ Time:</span>
+          <span id="departure-time-display">Not Set</span>
+        </div>
       </div>
-      <div class="date-badge">
-        <span>⏰ Departure Time:</span>
-        <span id="departure-time-display">Not Set</span>
-      </div>
-      <div class="date-badge">
-        <span>📍 Destination:</span>
-        <span id="destination-display">Not Set</span>
-      </div>
-      <div class="date-badge">
-        <span>🚏 Pick Up Point:</span>
-        <span id="pickup-display">Not Set</span>
+
+      <!-- Row 2: Destination & Pick Up Point -->
+      <div class="badge-pair">
+        <div class="date-badge">
+          <span>📍 To:</span>
+          <span id="destination-display">Not Set</span>
+        </div>
+        <div class="date-badge">
+          <span>🚏 Pickup:</span>
+          <span id="pickup-display">Not Set</span>
+        </div>
       </div>
     </div>
 
