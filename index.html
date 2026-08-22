@@ -215,6 +215,14 @@
       width: 100%;
     }
 
+    .plain-heading {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text-black);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .qr-card {
       background: #FFFFFF;
       padding: 6px;
@@ -394,7 +402,7 @@
     <div class="qr-section">
       <!-- Payment QR Code -->
       <div class="qr-row-item">
-        <div class="btn">Scan to Pay</div>
+        <div class="plain-heading">Scan this to Pay</div>
         <div class="qr-card">
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi%3A%2F%2Fpay%3Fpa%3D7006208554%40upi%26pn%3DDriver%26cu%3DINR" alt="Payment QR Code" />
         </div>
