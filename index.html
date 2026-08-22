@@ -348,11 +348,15 @@
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <!-- Date, Destination & Pick Up Point Badges -->
+    <!-- Date, Departure Time, Destination & Pick Up Point Badges -->
     <div class="info-badges-row">
       <div class="date-badge">
         <span>📅 Journey Date:</span>
         <span id="journey-date-display">Today</span>
+      </div>
+      <div class="date-badge">
+        <span>⏰ Departure Time:</span>
+        <span id="departure-time-display">Not Set</span>
       </div>
       <div class="date-badge">
         <span>📍 Destination:</span>
@@ -428,6 +432,13 @@
       </div>
 
       <div class="manual-entry-group">
+        <label for="manual-time-input">Departure Time</label>
+        <div class="manual-input-row">
+          <input type="text" id="manual-time-input" placeholder="e.g. 09:00 AM" />
+        </div>
+      </div>
+
+      <div class="manual-entry-group">
         <label for="manual-destination-input">Destination</label>
         <div class="manual-input-row">
           <input type="text" id="manual-destination-input" placeholder="e.g. Srinagar" />
@@ -481,6 +492,7 @@
     let driverPhone = "+917006208554";
     let availableSeats = 6;
     let journeyDate = new Date().toISOString().split('T')[0];
+    let departureTime = "Not Set";
     let destination = "Not Set";
     let pickupPoint = "Not Set";
     let requestedSeats = 1;
@@ -488,6 +500,7 @@
     const headerTrigger = document.getElementById('header-trigger');
     const progressBar = document.getElementById('progress-bar');
     const journeyDateDisplay = document.getElementById('journey-date-display');
+    const departureTimeDisplay = document.getElementById('departure-time-display');
     const destinationDisplay = document.getElementById('destination-display');
     const pickupDisplay = document.getElementById('pickup-display');
     const seatsCard = document.getElementById('seats-card');
@@ -510,6 +523,7 @@
     const driverPlusBtn = document.getElementById('btn-driver-plus');
     const manualPhoneInput = document.getElementById('manual-phone-input');
     const manualDateInput = document.getElementById('manual-date-input');
+    const manualTimeInput = document.getElementById('manual-time-input');
     const manualDestinationInput = document.getElementById('manual-destination-input');
     const manualPickupInput = document.getElementById('manual-pickup-input');
     const manualSeatInput = document.getElementById('manual-seat-input');
@@ -526,6 +540,7 @@
           if (typeof data.seats === 'number') availableSeats = data.seats;
           if (data.date) journeyDate = data.date;
           if (data.phone) driverPhone = data.phone;
+          if (data.departureTime) departureTime = data.departureTime;
           if (data.destination) destination = data.destination;
           if (data.pickupPoint) pickupPoint = data.pickupPoint;
         } else {
@@ -533,6 +548,7 @@
         }
         manualPhoneInput.value = driverPhone;
         manualDateInput.value = journeyDate;
+        manualTimeInput.value = departureTime === "Not Set" ? "" : departureTime;
         manualDestinationInput.value = destination === "Not Set" ? "" : destination;
         manualPickupInput.value = pickupPoint === "Not Set" ? "" : pickupPoint;
         updateUI();
@@ -544,6 +560,7 @@
         seats: availableSeats,
         date: journeyDate,
         phone: driverPhone,
+        departureTime: departureTime,
         destination: destination,
         pickupPoint: pickupPoint
       });
@@ -561,6 +578,7 @@
         journeyDateDisplay.textContent = formattedDate;
       }
 
+      departureTimeDisplay.textContent = departureTime || "Not Set";
       destinationDisplay.textContent = destination || "Not Set";
       pickupDisplay.textContent = pickupPoint || "Not Set";
 
@@ -613,9 +631,10 @@
     whatsappBtn.addEventListener('click', () => {
       if (availableSeats <= 0) return;
       const formattedDate = journeyDateDisplay.textContent;
+      const timeText = departureTime !== "Not Set" ? ` at ${departureTime}` : '';
       const destText = destination !== "Not Set" ? ` to ${destination}` : '';
       const pickupText = pickupPoint !== "Not Set" ? ` (Pickup: ${pickupPoint})` : '';
-      const text = encodeURIComponent(`Hi! I would like to request ${requestedSeats} seat(s) for the journey on ${formattedDate}${destText}${pickupText}.`);
+      const text = encodeURIComponent(`Hi! I would like to request ${requestedSeats} seat(s) for the journey on ${formattedDate}${timeText}${destText}${pickupText}.`);
       const cleanPhone = driverPhone.replace(/[^0-9]/g, '');
       window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
     });
@@ -686,6 +705,11 @@
         journeyDate = e.target.value;
         pushStateToCloud();
       }
+    });
+
+    manualTimeInput.addEventListener('change', (e) => {
+      departureTime = e.target.value.trim() || "Not Set";
+      pushStateToCloud();
     });
 
     manualDestinationInput.addEventListener('change', (e) => {
