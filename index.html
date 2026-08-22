@@ -211,14 +211,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-    }
-
-    .qr-label {
-      font-size: 0.8rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: var(--text-black);
+      gap: 8px;
+      width: 100%;
     }
 
     .qr-card {
@@ -396,7 +390,7 @@
     <div class="qr-section">
       <!-- Payment QR Code -->
       <div class="qr-row-item">
-        <span class="qr-label">Scan to Pay</span>
+        <div class="btn">Scan to Pay</div>
         <div class="qr-card">
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi%3A%2F%2Fpay%3Fpa%3D7006208554%40upi%26pn%3DDriver%26cu%3DINR" alt="Payment QR Code" />
         </div>
@@ -404,15 +398,13 @@
 
       <!-- App Link Share QR Code -->
       <div class="qr-row-item">
-        <span class="qr-label">Scan to Share App</span>
+        <button class="btn" id="btn-share-qr">
+          Share App via WhatsApp
+        </button>
         <div class="qr-card">
           <img id="qr-image" src="" alt="App Link QR Code" />
         </div>
       </div>
-
-      <button class="btn" id="btn-share-qr">
-        Share App via WhatsApp
-      </button>
     </div>
   </div>
 
